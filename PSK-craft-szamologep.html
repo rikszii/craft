@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+<meta charset="UTF-8">
+<title>🛠️ Craft számológép</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wght@400..700&family=Pacifico&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+body {
+    font-family: DynaPuff, cursive;
+    background: #121212;
+    color: #eee;
+    padding: 20px;
+  }
+
+  h1 { color: #0cb865; text-align: center; margin-bottom: 30px; }
+  h2 { color: #0cb865; margin-bottom: 15px; }
+
+  #products {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding-bottom: 250px;
+}
+
+  .category {
+    background: #1f1f1f;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  }
+
+  .product {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+
+  label { font-weight: bold; }
+
+  input {
+    width: 80px;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2c2c2c;
+    color: #fff;
+    text-align: center;
+    transition: border 0.2s;
+  }
+
+  input:focus {
+    outline: none;
+    border: 1px solid #00b0ff;
+  }
+
+  button {
+    background: #1998e1;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    display: block;
+    margin: 20px auto;
+  }
+
+  button:hover {  
+    transform: translateY(-2px);
+  }
+
+  ul {
+    margin-top: 20px;
+    padding-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  ul li {
+    background: #2c2c2c;
+    padding: 8px 12px;
+    border-radius: 6px;
+    list-style-type: none;
+    min-width: 100px;
+    text-align: center;
+  }
+
+  .divider {
+  grid-column: 1 / -1;
+  margin: 40px 0 10px 0;
+  text-align: center;
+  position: relative;
+}
+
+.divider::before {
+  content: "";
+  display: block;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #cccccc, transparent);
+  margin-bottom: 10px;
+}
+
+.divider span {
+  font-weight: bold;
+  font-size: 18px;
+  color: #cccccc;
+  letter-spacing: 1px;
+}
+
+.batch {
+  color: #d455bc;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+#result-container {
+  position: fixed;     
+  bottom: 0;            
+  left: 0;             
+  width: 100%;          
+  background: #1f1f1f;
+  padding: 15px 20px;
+  box-shadow: 0 -4px 8px rgba(0,0,0,0.5);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  max-height: 200px;   
+  overflow-y: auto;
+  z-index: 999;      
+}
+
+#result-container ul {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#result-container ul li {
+  background: #2c2c2c;
+  padding: 8px 12px;
+  border-radius: 6px;
+  list-style: none;
+  min-width: 100px;
+  text-align: center;
+
+}
+</style>
+</head>
+
+<body>
+
+<!-- Login rendszer -->
+<div id="login-screen" style="
+  position: fixed;
+  inset: 0;
+  background: #181818;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  flex-direction: column;
+">
+  <h1 id="lock-icon" style="font-size: 4rem; margin-bottom: 10px; transition: all 0.3s;">🔒</h1>
+  <h1 font-family="Poppins" style="color:#d455bc;"> Pink Set Killaz - Craft számológép | Információk</h1>
+  <h3 style="color:#0196ec;">⬇️ Add meg a jelszót! ⬇️</h3>
+
+  <input type="password" id="passwordInput" placeholder="🗝️: PSK"
+         style="margin:10px; padding:10px; border-radius:80px; border:none; width:250px;">
+
+  <button onclick="checkPassword()">Belépés</button>
+
+  <div id="loginError"
+     style="
+       color:#c71616;
+       margin-top:10px;
+       min-height:20px;
+       line-height:20px;
+     ">
+&nbsp;
+  </div>
+</div>
+
+<!-- Fenti feliratok -->
+<h1 style="color: #e630bc">Pink Set Killaz - Craft számológép | Információk </h1>
+<h2 style="text-align: center; color: #0196ec;">⬇️ Add meg, hogy miből hány darabot szeretnél craftolni! ⬇️</h2>
+
+<!-- A tárgyak craftolásra -->
+<div id="products"></div>
+
+<!-- A lenti fix rész -->
+<div id="result-container">
+  <h2 style="color: #0196ec;">📦 Szükséges alapanyagok:</h2>
+
+  <!-- A kiszámolt alapanyagok -->
+  <ul id="result"></ul>
+
+  <!-- Gombok elosztva -->
+  <div style="display: flex; margin-top: 5px; gap: 10px; width: fit-content;">
+      
+      <button onclick="resetAll()" style="background: #c71616;">Nullázás</button>
+      <button onclick="exportSimple()" style="background:#0196ec;">Másolás</button>
+
+  </div>
+</div>
+
+<script>
+
+// Jelszó ellenőrző függvény
+async function checkPassword() {
+  const correctHash = "f19cb00638f96c79acbe732a149c4558bb37d4c825bf01dd678f0652c968ace6";
+  const inputField = document.getElementById("passwordInput");
+  const input = inputField.value;
+  const errorDiv = document.getElementById("loginError");
+  const lockIcon = document.getElementById("lock-icon");
+
+  const msgUint8 = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (inputHash === correctHash) {
+    lockIcon.textContent = "🔓";
+    
+    setTimeout(() => {
+      document.getElementById("login-screen").style.opacity = "0"; // Szebb átmenet
+      setTimeout(() => {
+        document.getElementById("login-screen").style.display = "none";
+      }, 300);
+    }, 500);
+  } else {
+    errorDiv.textContent = "Hibás jelszó!";
+    inputField.value = ""; // Töröljük a rossz jelszót
+    setTimeout(() => {
+      errorDiv.innerHTML = "&nbsp;";
+    }, 2000);
+  }
+}
+
+// EZ A RÉSZ FELEL AZ ENTER-ÉRT:
+document.getElementById("passwordInput").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault(); // Megakadályozza az oldal esetleges újratöltését
+    checkPassword();
+  }
+});
+
+// Globális figyelő biztonsági tartaléknak
+window.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && document.getElementById("login-screen").style.display !== "none") {
+    checkPassword();
+  }
+});
+
+// Itemek kategóriák szerint... perBatch: mennyit ad egy adag item craftolása.
+const categories = {
+  "🔫 Fegyverek:": {
+
+    "Pisztoly": {
+      materials: {
+        Pisztoly_összeszerelő: 1,
+        Kenőolaj: 1,
+        Elsütő_billentyű: 1,
+        Markolat: 1,
+        Rugó: 2,
+        Cső: 3,
+        Fém: 8,
+        Csavar: 10,
+        Műanyag: 14
+      },
+      perBatch: 1
+    },
+
+    "TEC-9": {
+      materials: {
+        Erős_szigetelő_szalag: 1,
+        Torkolat: 1,
+        Tec9_összeszerelő: 0.5,
+        Kenőolaj: 1,
+        Elsütő_billentyű: 1,
+        Markolat: 1,
+        Rugó: 4,
+        Cső: 5,
+        Fém: 12,
+        Csavar: 13
+      },
+      perBatch: 1
+    },
+
+    "AK-47": {
+      materials: {
+        Torkolat: 1,
+        AK_összeszerelő: 1,
+        Kenőolaj: 2,
+        Elsütő_billentyű: 1,
+        Markolat: 1,
+        Acéllap: 4,
+        Rugó: 8,
+        Cső: 7,
+        Fém: 20,
+        Csavar: 20,
+        Műanyag: 22,
+        Réz: 13
+      },
+      perBatch: 1
+    },
+
+    "Mini Uzi": {
+      materials: {
+        UZI_összeszerelő: 0.25,
+        Kenőolaj: 1,
+        Elsütő_billentyű: 1,
+        Markolat: 1,
+        Rugó: 5,
+        Cső: 6,
+        Fém: 15,
+        Csavar: 19,
+        Műanyag: 16,
+        Réz: 8
+      },
+      perBatch: 1
+    },
+
+    "Duplacsövű sörétes puska": {
+      materials: {
+        Torkolat: 1,
+        Shotgun_összeszerelő: 0.5,
+        Kenőolaj: 2,
+        Elsütő_billentyű: 1,
+        Markolat: 1,
+        Acéllap: 2,
+        Rugó: 5,
+        Cső: 6,
+        Fém: 15,
+        Csavar: 18,
+        Fa: 5,
+        Réz: 12
+      },
+      perBatch: 1
+    }
+  },
+
+  "💥 Lőszerek:": {
+
+    "9mm-es töltény": {
+      materials: {
+        Lőpor: 1,
+        Műanyag: 4,
+        Réz: 5,
+        Fém: 8
+      },
+      perBatch: 24
+    },
+
+    "7.62x39-es töltény": {
+      materials: {
+        Lőpor: 2,
+        Műanyag: 6,
+        Réz: 8,
+        Fém: 15
+      },
+      perBatch: 30
+    },
+
+    ".45_ACP_töltény": {
+      materials: {
+        Lőpor: 1,
+        Műanyag: 5,
+        Réz: 6,
+        Fém: 10
+      },
+      perBatch: 32
+    },
+
+    "12 Gauge töltény": {
+      materials: {
+        Lőpor: 2,
+        Műanyag: 4,
+        Réz: 6,
+        Fém: 8
+      },
+      perBatch: 4
+    }
+  },
+
+  "🔩 Alkatrészek:": {
+
+    "Torkolat": {
+      materials: {
+        Erős_szigetelő_szalag: 1,
+        Csavar: 2,
+        Fém: 4
+      },
+      perBatch: 1
+    },
+
+    "Markolat": {
+      materials: {
+        Bőr: 1,
+        Fa: 1,
+        Műanyag: 6,
+        Fém: 3
+      },
+      perBatch: 1
+    },
+
+    "Elsütő billentyű": {
+      materials: {
+        Rugós_drót: 1,
+        Rugó: 2,
+        Fém: 5
+      },
+      perBatch: 1
+    },
+
+    "Lőpor": {
+      materials: {
+        Salétrom: 3,
+        Kénpor: 4,
+        Szénpor: 6
+      },
+      perBatch: 2
+    }
+  },
+
+  "🗡️ Eszközök:": {
+
+    "Zárfeltörő": {
+      materials: {
+        Erős_szigetelő_szalag: 1,
+        Rugó: 1,
+        Csavar: 2,
+        Fém: 3
+      },
+      perBatch: 1
+    },
+
+    "Törött dákó": {
+      materials: {
+        Ragasztó: 1,
+        Műanyag: 10,
+        Fa: 4,
+        Fém: 1
+      },
+      perBatch: 1
+    },
+
+    "Pillangókés": {
+      materials: {
+        Bőr: 1,
+        Kenőolaj: 1,
+        Rugó: 2,
+        Fém: 4,
+        Csavar: 5
+      },
+      perBatch: 1
+    },
+
+    "Boxer": {
+      materials: {
+        Kenőolaj: 1,
+        Bőr: 1,
+        Réz: 2,
+        Csavar: 3,
+        Fém: 4
+      },
+      perBatch: 1
+    },
+
+    "Plazma vágó pisztoly": {
+      materials: {
+        Cső: 1,
+        Rugó: 2,
+        Műanyag: 3,
+        Fém: 4
+      },
+      perBatch: 1
+    }
+  },
+
+  "🏭 Kohó - Kemence:": {
+
+    "Réz": {
+      materials: {
+        Ércmosó_kád: 0.05,
+        Olvasztó_kemence: 0.1,
+        Rézérc_zúzalék: 3
+      },
+      perBatch: 1
+    },
+    "Fém": {
+      materials: {
+        Olvasztó_kemence: 0.1,
+        Aprított_kő: 1,
+        Rézérc_zúzalék: 2,
+        Vasérc_zúzalék: 2
+      },
+      perBatch: 1
+    },
+
+    "Acéllap": {
+      materials: {
+        Olvasztó_kemence: 0.1,
+        Szénpor: 2,
+        Vasérc_zúzalék: 3
+      },
+      perBatch: 1
+    },
+
+    "Rugó": {
+      materials: {
+        Rugós_drót: 1,
+        Réz: 1,
+        Fém: 2
+      },
+      perBatch: 3
+    },
+    
+    "Cső": {
+      materials: {
+        Acéllap: 1,
+        Réz: 1,
+        Fém: 4
+      },
+      perBatch: 2
+    },
+
+    "Csavar": {
+      materials: {
+        Bányász_mérleg: 0.05,
+        Olvasztó_kemence: 0.05,
+        Acéllap: 1,
+        Vasérc_zúzalék: 2
+      },
+      perBatch: 5
+    }
+  },
+
+  "🏭 Kohó - Porok:": {
+
+    "Szénpor": {
+      materials: {
+        Kőaprító_gép: 0.1,
+        Szénérc_zúzalék: 1,
+        Aprított_kő: 1,
+        Szén: 2
+      },
+      perBatch: 1
+    },
+
+    "Kénpor": {
+      materials: {
+        Kőaprító_gép: 0.1,
+        Kén_zúzalék: 3,
+        Aprított_kő: 1,
+      },
+      perBatch: 1
+    },
+
+    "Salétrom": {
+      materials: {
+        Kőaprító_gép: 0.1,
+        Kvarc_zúzalék: 1,
+        Aprított_kő: 1,
+        Kristály_zúzalék: 2
+      },
+      perBatch: 1
+    }
+  },
+
+  "⛏️ Ércfeldolgozó üzem - A:": {
+
+    "Rézérc": {
+      materials: {
+        Kibányászott_rézérc: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    },
+    "Vasérc": {
+      materials: {
+        Kibányászott_vasérc: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    },
+
+    "Szénérc": {
+      materials: {
+        Kibányászott_szénérc: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    },
+
+    "Kén": {
+      materials: {
+        Kibányászott_kén_érc: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    },
+    
+    "Kvarc": {
+      materials: {
+        Kibányászott_kvarc_érc: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    },
+
+    "Kristály": {
+      materials: {
+        Kibányászott_kristály_érc: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    },
+
+    "Aprított_kő": {
+      materials: {
+        Tisztított_kő: 1,
+        Kalapács: 0.1
+      },
+      perBatch: 10
+    }
+  },
+
+  "⛏️ Ércfeldolgozó üzem - B:": {
+
+    "Rézérc zúzalék": {
+      materials: {
+        Rézérc: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    },
+
+    "Vasérc zúzalék": {
+      materials: {
+        Vasérc: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    },
+
+    "Szén": {
+      materials: {
+        Szénérc: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    },
+
+    "Kén zúzalék": {
+      materials: {
+        Kén: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    },
+    
+    "Kvarc zúzalék": {
+      materials: {
+        Kvarc: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    },
+
+    "Kristály zúzalék": {
+      materials: {
+        Kristály: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    },
+
+    "Szénérc zúzalék": {
+      materials: {
+        Szén: 5,
+        Pofás_törőgép: 0.1,
+      },
+      perBatch: 10
+    }
+  },
+
+  "🚿 Mosó üzem:": {
+
+    "Tisztított kő": {
+      materials: {
+        Kibányászott_kő: 1,
+        Ércmosó_kád: 0.05
+      },
+      perBatch: 1
+    }
+  },
+
+  "♻️ Műanyag feldolgozó:": {
+
+    "Műanyag:": {
+      materials: {
+        Műanyag_granulátum: 10,
+      }, 
+      perBatch: 1
+    }
+  },
+
+  "🚬 Drogok:": {
+
+    "Füves cigi": {
+      materials: {
+        Marihuána_gumó: 1,
+        Infralámpa: 1,
+        Cigipapír: 1,
+        Cigi_csiga: 1
+      },
+      perBatch: 1
+    },
+
+    "Prémium füves cigi": {
+      materials: {
+        Prémium_marihuána_gumó: 1,
+        Infralámpa: 1,
+        Cigipapír: 1,
+        Cigi_csiga: 1
+      },
+      perBatch: 1
+    },
+
+    "Kokain": {
+      materials: {
+        Kokalevél: 1,
+        Benzines_kanna: 1,
+        Kénsav: 1,
+        Infralámpa: 1
+      },
+      perBatch: 1
+    },
+
+    "Heroinos fecskendő": {
+      materials: {
+        Mákszalma: 1,
+        Kénsav: 1,
+        Infralámpa: 1,
+        Kanál: 1,
+        Fecskendő: 1
+      },
+      perBatch: 1
+    },
+
+    "Meth": {
+      materials: {
+        Ammónia: 1,
+        Pszeudofedrin: 1,
+        Etanol: 1,
+        Aceton: 1,
+        Lithium_lapok: 3
+  },
+      tools: {
+        Meth_főző_készlet: 1
+  },
+  perBatch: 4
+}
+  },
+
+  "🚲 Bicikli:": {
+    "BMX": {
+      materials: {
+        Váz: 1,
+        Villa: 1,
+        Kormány: 1,
+        Fék: 2,
+        Kerék: 2,
+        Pedál: 2,
+        Ülés: 2,
+        BMX_csavar: 16,
+        BMX_festék: 1
+      },
+      perBatch: 1
+    },
+
+    "BMX festék": {
+      materials: {
+        Üres_festékszóró: 1,
+        Színes_festékpor: 1,
+        Lakk_spray: 1
+      },
+      perBatch: 1
+    }
+  }
+};
+
+// Input mezők generálása
+const container = document.getElementById("products");
+
+function renderProducts() {
+  container.innerHTML = "";
+  for (const category in categories) {
+
+  // A 2 kategória elválasztó
+  if (category.includes("Fegyverek")) {
+    const divider = document.createElement("div");
+    divider.className = "divider";
+    divider.innerHTML = `<span>🛠️ FEGYVERCRAFT 🛠️</span>`;
+    container.appendChild(divider);
+  }
+
+  if (category.includes("Kohó - A")) {
+    const divider = document.createElement("div");
+    divider.className = "divider";
+    divider.innerHTML = `<span>🛠️ BÁNYÁSZAT 🛠️</span>`;
+    container.appendChild(divider);
+  }
+
+  if (category.includes("Drogok")) {
+    const divider = document.createElement("div");
+    divider.className = "divider";
+    divider.innerHTML = `<span>🛠️ EGYÉB 🛠️</span>`;
+    container.appendChild(divider);
+  }
+
+    const catDiv = document.createElement("div");
+    catDiv.className = "category";
+    catDiv.innerHTML = `<h2>${category}</h2>`;
+
+    for (const product in categories[category]) {
+
+  const { perBatch } = categories[category][product];
+
+  const displayName = perBatch > 1
+    ? `${product} <span class="batch">(${perBatch}db)</span>`
+    : product;
+
+  const div = document.createElement("div");
+  div.className = "product";
+
+  const inputId = product;
+
+  div.innerHTML = `
+    <label>${displayName}</label>
+    <input type="number" min="0" value="0" id="${inputId}">
+  `;
+
+  catDiv.appendChild(div);
+
+  // automatikus számolás
+  div.querySelector("input").addEventListener("input", calculate);
+}
+
+    container.appendChild(catDiv);
+  }
+}
+renderProducts();
+
+// Maga a számolás
+function calculate() {
+  const totals = {};
+
+  // Végigmegyünk az összes kategórián és terméken
+  for (const category in categories) {
+    for (const product in categories[category]) {
+      const qty = Number(document.getElementById(product).value);
+      if (qty <= 0) continue; // Ha 0, nem számol
+
+      const { materials, perBatch } = categories[category][product];
+
+      // Hány adag kell
+      const batches = Math.ceil(qty / perBatch);
+
+      // Minden anyag összesítése
+      for (const mat in materials) {
+        totals[mat] = (totals[mat] || 0) + materials[mat] * batches;
+      }
+
+      // Nem fogyó eszközök (pl. főzőkészlet)
+      const tools = categories[category][product].tools;
+      if (tools) {
+        for (const tool in tools) {
+          totals[tool] = (totals[tool] || 0) + tools[tool];
+        }
+      }
+    }
+  }
+
+  // Eredmény kiírása
+const result = document.getElementById("result");
+result.innerHTML = "";
+
+for (const mat in totals) {
+  if (totals[mat] > 0) {
+
+    const value = Number(totals[mat].toFixed(2)); // ← javítás
+
+    const li = document.createElement("li");
+    li.textContent = `${mat}: ${value}`;
+    result.appendChild(li);
+  }
+}
+}
+
+// Nullázás gomb
+function resetAll() {
+
+  for (const category in categories) {
+    for (const product in categories[category]) {
+      document.getElementById(product).value = 0;
+    }
+  }
+
+  document.getElementById("result").innerHTML = "";
+  calculate();
+}
+
+// Másolás gomb
+function exportSimple() {
+  const resultItems = document.querySelectorAll("#result li");
+
+  if (resultItems.length === 0) return;
+
+  let text = "";
+
+  resultItems.forEach(item => {
+    text += item.textContent + "\n";
+  });
+
+  navigator.clipboard.writeText(text);
+}
+
+</script>
+</body>
+</html>
